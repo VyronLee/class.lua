@@ -1,2 +1,23 @@
 # lua-class
-An Object Orientation Module for Lua.
+
+一个用于实现面向对象编程思想的Lua类模块。
+
+# Features
+
+该模块以C++类为原型，进行相关行为的模拟：
+
+|   函数名  |     功能说明       |
+|-----------|--------------------|
+| new       | 相当于c++中的new，用于新建一个对象|
+| destroy   | 相当于c++中的delete, 用于删除一个对象|
+| initialize| 相当于构造函数，使用new生成对象后会自动调用|
+| unintialize|相当于析构函数，使用destroy删除对象后会自动调用|
+
+同时提供`static`“保留字”，在`static`中定义的成员则为静态对象/函数。
+
+此外，该模块遵循Lua命名规则，提供两个自定义“metamethod”：`__alloc`以及`__dealloc`，
+使用者可制定自己的对象生成与销毁处理逻辑，该功能对于实现“对象池”十分方便。
+
+# Usage
+
+待补充。
