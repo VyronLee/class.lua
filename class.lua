@@ -57,7 +57,23 @@ local _defaultAlloc = function(aClass)
 end
 
 local _defaultDealloc = function(anInstance)
-    setmetatable(anInstance)
+    -- nothing to do
+end
+
+local _depthFirstInitialize, _breadthFirstUninitialize
+
+_depthFirstInitialize = function(aClass, anInstance, ...)
+    if aClass.__super then
+        _depthFirstInitialize(aClass.__super, anInstance, ...)
+    end
+    aClass.initialize(anInstance, ...)
+end
+
+_breadthFirstUninitialize = function(aClass, anInstance)
+    aClass.uninitialize(anInstance)
+    if aClass.__super then
+        _breadthFirstUninitialize(aClass.__super, anInstance)
+    end
 end
 
 local classbase = {
@@ -65,14 +81,14 @@ local classbase = {
         assert(type(aClass) == "table", "You must use Class:new() instead of Class.new()")
 
         local instance = aClass:allocate()
-        instance:initialize(...)
+        _depthFirstInitialize(aClass, instance, ...)
         return instance
     end,
 
     destroy = function(anInstance)
         assert(type(anInstance) == "table", "You must use Class:destroy() instead of Class.destroy()")
 
-        anInstance:uninitialize()
+        _breadthFirstUninitialize(anInstance.__class, anInstance)
         anInstance:deallocate()
     end,
 
