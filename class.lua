@@ -41,9 +41,9 @@ local _defaultAlloc = function(aClass)
         __tostring = function()
             return string.format("classname: %s, hashcode: %s", instance.__name, instance.__hashCode)
         end,
-        __gc = function(instance)
+        __gc = function(t)
             if class._VERBOSE >= 1 then
-                print("An instance has collected, " .. tostring(instance))
+                print("An instance has collected, " .. tostring(t))
             end
         end
     }

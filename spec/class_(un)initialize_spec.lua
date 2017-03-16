@@ -16,7 +16,7 @@ describe("An instance", function()
             table.insert(initialize_messages, msg)
         end
 
-        local instanceB = classB:new()
+        classB:new()
 
         local initialize_messages_expect = {
             "classA initialize",
