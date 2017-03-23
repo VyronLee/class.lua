@@ -66,7 +66,7 @@ ClassA.static.kInstance = ClassA:new()
 
 -- 单例函数
 function ClassA.static:instance()
-    return ClassA.static.kInstance
+    return ClassA.kInstance
 end
 
 -- 单例函数调用
