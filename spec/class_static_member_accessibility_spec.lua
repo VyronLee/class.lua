@@ -5,7 +5,7 @@ describe("A static member", function()
     it("can be invoke directly", function()
         local classA = class("ClassA")
         classA.static.width = 5
-        classA.static.getWidth = function()
+        function classA.static.getWidth()
             return 6
         end
         local instance = classA:new()
@@ -25,7 +25,7 @@ describe("A static member", function()
         local classB = class("ClassB", classA)
 
         classA.static.width = 5
-        classA.static.getWidth = function()
+        function classA.static.getWidth()
             return 6
         end
 
