@@ -152,6 +152,8 @@ local _isInstanceOf = function(anInstance, aClass)
 end
 
 local _createClass = function(name, super)
+    assert(type(name) == "string", "_createClas() - string expected, got: ".. type(name))
+
     local aClass = {
         __name  = name,
         __super = super,
@@ -172,6 +174,9 @@ local _createClass = function(name, super)
         end,
         __metatable = super or classbase,    -- fake meta
         __call = function(...) return aClass:new(...) end,
+        __tostring = function()
+            return "classname: " .. name
+        end,
     })
 
     return aClass
