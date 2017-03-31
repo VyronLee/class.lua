@@ -1,6 +1,8 @@
 # lua-class
 
 [![Build Status](https://travis-ci.org/VyronLee/lua-class.svg?branch=master)](https://travis-ci.org/VyronLee/lua-class)
+[![Coverage Status](https://coveralls.io/repos/github/VyronLee/lua-class/badge.svg?branch=master)](https://coveralls.io/github/VyronLee/lua-class?branch=master)
+[![License](http://img.shields.io/badge/Licence-MIT-brightgreen.svg)](LICENSE)
 
 一个用于实现面向对象编程思想的Lua类模块。
 
@@ -8,12 +10,12 @@
 
 1. 该模块以C++类为原型，进行相关行为的模拟：
 
-    |   函数名  |     功能说明       |
-    |-----------|--------------------|
-    | new       | 相当于c++中的new，用于新建一个对象|
-    | destroy   | 相当于c++中的delete, 用于删除一个对象|
-    | initialize| 相当于构造函数，使用new生成对象后会自动调用。如有继承关系，会先调用父类的initialize，再调用子类的initialize|
-    | unintialize|相当于析构函数，使用destroy删除对象后会自动调用。如有继承关系，会先调用子类的uninitialize，再调用父类的uninitialize|
+|   函数名  |     功能说明       |
+|-----------|--------------------|
+| new       | 相当于c++中的new，用于新建一个对象|
+| destroy   | 相当于c++中的delete, 用于删除一个对象|
+| initialize| 相当于构造函数，使用new生成对象后会自动调用。如有继承关系，会先调用父类的initialize，再调用子类的initialize|
+| unintialize|相当于析构函数，使用destroy删除对象后会自动调用。如有继承关系，会先调用子类的uninitialize，再调用父类的uninitialize|
 
 2. 提供`static`“保留字”，在`static`中定义的成员则为静态对象/函数，静态成员会受到调用保护，只能使用“类”调用，不能从对象中调用。
 
