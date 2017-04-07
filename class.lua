@@ -124,9 +124,13 @@ local _getBaseMetatable = function(aClassOrAnInstance)
     return basemeta
 end
 
+local _isClass = function(target)
+    return _getBaseMetatable(target) == classbase
+end
+
 local _isSubClassOf = function(subclass, super)
-    assert(_getBaseMetatable(subclass) == classbase, "_isSubClassOf() - `subclass` is not a class!")
-    assert(_getBaseMetatable(super) == classbase, "_isSubClassOf() - `super` is not a class!")
+    assert(_isClass(subclass), "_isSubClassOf() - `subclass` is not a class!")
+    assert(_isClass(super), "_isSubClassOf() - `super` is not a class!")
     assert(not subclass.__hashCode, "_isSubClassOf() - `subclass` cannot be an instance!")
     assert(not subclass.__hashCode, "_isSubClassOf() - `super` cannot be an instance!")
 
@@ -142,8 +146,8 @@ local _isSubClassOf = function(subclass, super)
 end
 
 local _isInstanceOf = function(anInstance, aClass)
-    assert(_getBaseMetatable(anInstance) == classbase, "_isInstanceOf() - `anInstance` is not inherited from class!")
-    assert(_getBaseMetatable(aClass) == classbase, "_isInstanceOf() - `aClass` is not a class!")
+    assert(_isClass(anInstance), "_isInstanceOf() - `anInstance` is not inherited from class!")
+    assert(_isClass(aClass), "_isInstanceOf() - `aClass` is not a class!")
     assert(anInstance.__hashCode, "_isInstanceOf() - `anInstance` is not an instance!")
     assert(not aClass.__hashCode, "_isInstanceOf() - `aClass` can not be an instance!")
 
@@ -181,6 +185,8 @@ local _createClass = function(name, super)
 
     return aClass
 end
+
+class.is = _isClass
 
 setmetatable(class, {__call = function(_, name, super) return _createClass(name, super) end})
 
