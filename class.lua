@@ -128,6 +128,10 @@ local _isClass = function(target)
     return _getBaseMetatable(target) == classbase
 end
 
+local _typeof = function(target)
+    return getmetatable(target)
+end
+
 local _isSubClassOf = function(subclass, super)
     assert(_isClass(subclass), "_isSubClassOf() - `subclass` is not a class!")
     assert(_isClass(super), "_isSubClassOf() - `super` is not a class!")
@@ -187,6 +191,7 @@ local _createClass = function(name, super)
 end
 
 class.is = _isClass
+class.typeof = _typeof
 
 setmetatable(class, {__call = function(_, name, super) return _createClass(name, super) end})
 
