@@ -44,4 +44,22 @@ describe("An instance", function()
         assert.are.same(uninitialize_messages, uninitialize_messages_expect)
     end)
 
+    it("allow none initialize/uninitialize methods", function()
+        local classC = class("ClassC", classB)
+
+        local initialize_messages = {}
+        _G.print = function(msg)
+            table.insert(initialize_messages, msg)
+        end
+
+        classC:new()
+
+        local initialize_messages_expect = {
+            "classA initialize",
+            "classB initialize",
+        }
+
+        assert.are.same(initialize_messages, initialize_messages_expect)
+
+    end)
 end)

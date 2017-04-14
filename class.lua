@@ -66,11 +66,17 @@ _depthFirstInitialize = function(aClass, anInstance, ...)
     if aClass.__super then
         _depthFirstInitialize(aClass.__super, anInstance, ...)
     end
-    aClass.initialize(anInstance, ...)
+    local initializer = rawget(aClass, "initialize")
+    if initializer then
+        initializer(anInstance, ...)
+    end
 end
 
 _breadthFirstUninitialize = function(aClass, anInstance)
-    aClass.uninitialize(anInstance)
+    local uninitializer = rawget(aClass, "uninitialize")
+    if uninitializer then
+        uninitializer(anInstance)
+    end
     if aClass.__super then
         _breadthFirstUninitialize(aClass.__super, anInstance)
     end
