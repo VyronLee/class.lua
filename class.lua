@@ -113,9 +113,6 @@ local classbase = {
         _defaultDealloc(anInstance)
     end,
 
-    initialize   = function() end,
-    uninitialize = function() end,
-
     defaultAlloc   = _defaultAlloc,
     defaultDealloc = _defaultDealloc,
 }
@@ -187,7 +184,7 @@ local _createClass = function(name, super)
             return rawget(aClass.static, keyname) or (super and super[keyname] or classbase[keyname])
         end,
         __metatable = super or classbase,    -- fake meta
-        __call = function(...) return aClass:new(...) end,
+        __call = function(_, ...) return aClass:new(...) end,
         __tostring = function()
             return "classname: " .. name
         end,
