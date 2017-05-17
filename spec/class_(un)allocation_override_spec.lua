@@ -8,7 +8,7 @@ describe("A class", function()
             if #pool > 0 then
                 return table.remove(pool, 1)
             end
-            return self:defaultAlloc()
+            return self:default_alloc()
         end
         classA.__dealloc = function(self)
             table.insert(pool, self)

@@ -23,7 +23,7 @@
 3. 提供两个自定义“metamethod”：`__alloc`以及`__dealloc`，
 使用者可制定自己的对象生成与销毁处理逻辑，该功能对于实现“对象池”十分方便。
 
-4. 提供`isSubClassOf`与`isInstanceOf`函数，分别用于检测是否为指定类的子类或者实例。
+4. 提供`is_subclass_of`与`is_instance_of`函数，分别用于检测是否为指定类的子类或者实例。
 
 # Installation
 

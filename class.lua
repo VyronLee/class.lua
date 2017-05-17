@@ -12,19 +12,19 @@
 local class = {
     _AUTHOR      = "VyronLee (lwz_jz@hotmail.com)",
     _LICENSE     = "MIT License",
-    _VERSION     = "v1.0.0",
+    _VERSION     = "v1.0.1",
     _VERBOSE     = 0,
 }
 
-local _hashCode = 0x0
-local _hashCodeGenerator = function()
-    _hashCode = _hashCode + 1
-    return _hashCode
+local _hash_code = 0x0
+local _hash_code_generator = function()
+    _hash_code = _hash_code + 1
+    return _hash_code
 end
 
-local _defaultAlloc = function(aClass)
+local _default_alloc = function(aClass)
     local instance = {
-        __hashCode = _hashCodeGenerator(),
+        __hashcode = _hash_code_generator(),
         __class    = aClass,
         static     = {},
     }
@@ -36,10 +36,10 @@ local _defaultAlloc = function(aClass)
         end,
         __metatable = aClass,   -- fake meta
         __eq = function(self, other)
-            return self.__hashCode == other.__hashCode
+            return self.__hashcode == other.__hashcode
         end,
         __tostring = function()
-            return string.format("classname: %s, hashcode: %s", instance.__name, instance.__hashCode)
+            return string.format("classname: %s, hashcode: %s", instance.__name, instance.__hashcode)
         end,
         __gc = function(t)
             if class._VERBOSE >= 1 then
@@ -56,15 +56,15 @@ local _defaultAlloc = function(aClass)
     return instance
 end
 
-local _defaultDealloc = function(anInstance)
+local _default_dealloc = function(anInstance)
     -- nothing to do
 end
 
-local _depthFirstInitialize, _breadthFirstUninitialize
+local _depth_first_initialize, _bread_first_uninitialize
 
-_depthFirstInitialize = function(aClass, anInstance, ...)
+_depth_first_initialize = function(aClass, anInstance, ...)
     if aClass.__super then
-        _depthFirstInitialize(aClass.__super, anInstance, ...)
+        _depth_first_initialize(aClass.__super, anInstance, ...)
     end
     local initializer = rawget(aClass, "initialize")
     if initializer then
@@ -72,13 +72,13 @@ _depthFirstInitialize = function(aClass, anInstance, ...)
     end
 end
 
-_breadthFirstUninitialize = function(aClass, anInstance)
+_bread_first_uninitialize = function(aClass, anInstance)
     local uninitializer = rawget(aClass, "uninitialize")
     if uninitializer then
         uninitializer(anInstance)
     end
     if aClass.__super then
-        _breadthFirstUninitialize(aClass.__super, anInstance)
+        _bread_first_uninitialize(aClass.__super, anInstance)
     end
 end
 
@@ -87,14 +87,14 @@ local classbase = {
         assert(type(aClass) == "table", "You must use Class:new() instead of Class.new()")
 
         local instance = aClass:allocate()
-        _depthFirstInitialize(aClass, instance, ...)
+        _depth_first_initialize(aClass, instance, ...)
         return instance
     end,
 
     destroy = function(anInstance)
         assert(type(anInstance) == "table", "You must use Class:destroy() instead of Class.destroy()")
 
-        _breadthFirstUninitialize(anInstance.__class, anInstance)
+        _bread_first_uninitialize(anInstance.__class, anInstance)
         anInstance:deallocate()
     end,
 
@@ -102,7 +102,7 @@ local classbase = {
         if aClass.__alloc then
             return aClass:__alloc()
         end
-        return _defaultAlloc(aClass)
+        return _default_alloc(aClass)
     end,
 
     deallocate = function(anInstance, ...)
@@ -110,14 +110,14 @@ local classbase = {
             anInstance:__dealloc()
             return
         end
-        _defaultDealloc(anInstance)
+        _default_dealloc(anInstance)
     end,
 
-    defaultAlloc   = _defaultAlloc,
-    defaultDealloc = _defaultDealloc,
+    default_alloc   = _default_alloc,
+    default_dealloc = _default_dealloc,
 }
 
-local _getBaseMetatable = function(aClassOrAnInstance)
+local _get_base_metatable = function(aClassOrAnInstance)
     local basemeta
     local meta = getmetatable(aClassOrAnInstance)
     while meta do
@@ -127,19 +127,19 @@ local _getBaseMetatable = function(aClassOrAnInstance)
     return basemeta
 end
 
-local _isClass = function(target)
-    return _getBaseMetatable(target) == classbase
+local _is_class = function(target)
+    return _get_base_metatable(target) == classbase
 end
 
 local _typeof = function(target)
     return getmetatable(target)
 end
 
-local _isSubClassOf = function(subclass, super)
-    assert(_isClass(subclass), "_isSubClassOf() - `subclass` is not a class!")
-    assert(_isClass(super), "_isSubClassOf() - `super` is not a class!")
-    assert(not subclass.__hashCode, "_isSubClassOf() - `subclass` cannot be an instance!")
-    assert(not subclass.__hashCode, "_isSubClassOf() - `super` cannot be an instance!")
+local _is_subclass_of = function(subclass, super)
+    assert(_is_class(subclass), "_is_subclass_of() - `subclass` is not a class!")
+    assert(_is_class(super), "_is_subclass_of() - `super` is not a class!")
+    assert(not subclass.__hashcode, "_is_subclass_of() - `subclass` cannot be an instance!")
+    assert(not subclass.__hashcode, "_is_subclass_of() - `super` cannot be an instance!")
 
     local cls = subclass
     repeat
@@ -152,17 +152,17 @@ local _isSubClassOf = function(subclass, super)
     return false
 end
 
-local _isInstanceOf = function(anInstance, aClass)
-    assert(_isClass(anInstance), "_isInstanceOf() - `anInstance` is not inherited from class!")
-    assert(_isClass(aClass), "_isInstanceOf() - `aClass` is not a class!")
-    assert(anInstance.__hashCode, "_isInstanceOf() - `anInstance` is not an instance!")
-    assert(not aClass.__hashCode, "_isInstanceOf() - `aClass` can not be an instance!")
+local _is_instance_of = function(anInstance, aClass)
+    assert(_is_class(anInstance), "_is_instance_of() - `anInstance` is not inherited from class!")
+    assert(_is_class(aClass), "_is_instance_of() - `aClass` is not a class!")
+    assert(anInstance.__hashcode, "_is_instance_of() - `anInstance` is not an instance!")
+    assert(not aClass.__hashcode, "_is_instance_of() - `aClass` can not be an instance!")
 
     local cls = anInstance.__class
-    return _isSubClassOf(cls, aClass)
+    return _is_subclass_of(cls, aClass)
 end
 
-local _createClass = function(name, super)
+local _create_class = function(name, super)
     assert(type(name) == "string", "_createClas() - string expected, got: ".. type(name))
 
     local aClass = {
@@ -171,8 +171,8 @@ local _createClass = function(name, super)
 
         static  = {},
 
-        isInstanceOf = _isInstanceOf,
-        isSubClassOf = _isSubClassOf,
+        is_instance_of = _is_instance_of,
+        is_subclass_of = _is_subclass_of,
     }
 
     setmetatable(aClass.static, {
@@ -193,9 +193,9 @@ local _createClass = function(name, super)
     return aClass
 end
 
-class.is = _isClass
+class.is = _is_class
 class.typeof = _typeof
 
-setmetatable(class, {__call = function(_, name, super) return _createClass(name, super) end})
+setmetatable(class, {__call = function(_, name, super) return _create_class(name, super) end})
 
 return class

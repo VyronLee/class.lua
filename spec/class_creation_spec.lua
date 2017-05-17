@@ -22,7 +22,7 @@ describe("A class", function()
         end)
 
         it("has the correct inherite relation", function()
-            assert.is_true(classB:isSubClassOf(classA))
+            assert.is_true(classB:is_subclass_of(classA))
         end)
     end)
 
@@ -34,7 +34,7 @@ describe("An object", function()
         it("is the instance of it", function()
             local classA = class("ClassA")
             local instance = classA:new()
-            assert.is_true(instance:isInstanceOf(classA))
+            assert.is_true(instance:is_instance_of(classA))
         end)
     end)
 
@@ -44,8 +44,8 @@ describe("An object", function()
             local classB = class("ClassB", classA)
             local instance = classB()
 
-            assert.is_true(instance:isInstanceOf(classB))
-            assert.is_true(instance:isInstanceOf(classA))
+            assert.is_true(instance:is_instance_of(classB))
+            assert.is_true(instance:is_instance_of(classA))
         end)
     end)
 
