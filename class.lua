@@ -1,12 +1,11 @@
 --------------------------------------------------------------
---       @file  class.lua
---      @brief  Object Orientation for Lua
+--        file:  class.lua
+--       brief:  Object Orientation for Lua
 --
---     @author  VyronLee, lwz_jz@hotmail.com
+--      author:  VyronLee, lwz_jz@hotmail.com
 --
---   @internal
---    Modified  2017-03-13 18:19
---   Copyright  Copyright (c) 2017, VyronLee
+--    Modified:  2017-03-13 18:19
+--   Copyright:  Copyright (c) 2017, VyronLee
 --============================================================
 
 local class = {
