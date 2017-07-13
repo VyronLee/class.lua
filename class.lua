@@ -40,12 +40,12 @@ local _default_alloc = function(aClass)
         __tostring = function()
             return string.format("classname: %s, hashcode: %s", instance.__name, instance.__hashcode)
         end,
-        __gc = function(t)
-            if class._VERBOSE >= 1 then
-                print("An instance has collected, " .. tostring(t))
-            end
-        end
     }
+    if class._VERBOSE >= 1 then
+        meta.__gc = function(t)
+            print("An instance has collected, " .. tostring(t))
+        end
+    end
     setmetatable(instance, meta)
 
     if class._VERBOSE >= 1 then
@@ -172,6 +172,11 @@ local _create_class = function(name, super)
 
         is_instance_of = _is_instance_of,
         is_subclass_of = _is_subclass_of,
+
+        implements = function(self, filename)
+            assert(loadfile(filename, "bt", self))()
+            return self
+        end,
     }
 
     setmetatable(aClass.static, {
