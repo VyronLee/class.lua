@@ -13,7 +13,15 @@ local class = {
     _LICENSE     = "MIT License",
     _VERSION     = "v1.0.1",
     _VERBOSE     = 0,
+    _SPEC        = 0,
 }
+
+local assert = assert
+local setmetatable = setmetatable
+local getmetatable = getmetatable
+local rawget = rawget
+local require = require
+local pcall = pcall
 
 local _hash_code = 0x0
 local _hash_code_generator = function()
@@ -25,13 +33,16 @@ local _default_alloc = function(aClass)
     local instance = {
         __hashcode = _hash_code_generator(),
         __class    = aClass,
-        static     = {},
     }
 
     local meta = {
         __index = function(_, keyname)
             assert(not aClass.static[keyname], "Cannot call static member from instance!")
             return aClass[keyname]
+        end,
+        __newindex = function(t, keyname, value)
+            assert(keyname ~= "static", "'static' is a keyword, please use others instead.")
+            t[keyname] = value
         end,
         __metatable = aClass,   -- fake meta
         __eq = function(self, other)
@@ -161,6 +172,18 @@ local _is_instance_of = function(anInstance, aClass)
     return _is_subclass_of(cls, aClass)
 end
 
+local _implements = function(aClass, filename)
+    setmetatable(aClass.env, {__index = _G})
+    assert(loadfile(filename, "bt", aClass.env))()
+    -- busted will change the behavior of the metatable during testing,
+    -- when set the metatable to 'nil', things will get wrong.
+    if class._SPEC <= 0 then
+        setmetatable(aClass.env, nil)
+    end
+
+    return aClass
+end
+
 local _create_class = function(name, super)
     assert(type(name) == "string", "_createClas() - string expected, got: ".. type(name))
 
@@ -168,24 +191,22 @@ local _create_class = function(name, super)
         __name  = name,
         __super = super,
 
-        static  = {},
+        env = {
+            static = setmetatable({}, {__index = super and super.static}),
+        },
 
         is_instance_of = _is_instance_of,
         is_subclass_of = _is_subclass_of,
 
-        implements = function(self, filename)
-            assert(loadfile(filename, "bt", self))()
-            return self
-        end,
+        implements = _implements,
     }
-
-    setmetatable(aClass.static, {
-        __index = super and super.static,
-    })
 
     setmetatable(aClass, {
         __index = function(_, keyname)
-            return rawget(aClass.static, keyname) or (super and super[keyname] or classbase[keyname])
+            return rawget(aClass, "env").static[keyname]
+                or rawget(aClass, "env")[keyname]
+                or (super and super[keyname]
+                or classbase[keyname])
         end,
         __metatable = super or classbase,    -- fake meta
         __call = function(_, ...) return aClass:new(...) end,
