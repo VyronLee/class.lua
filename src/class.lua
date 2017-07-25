@@ -20,8 +20,6 @@ local assert = assert
 local setmetatable = setmetatable
 local getmetatable = getmetatable
 local rawget = rawget
-local require = require
-local pcall = pcall
 
 local _hash_code = 0x0
 local _hash_code_generator = function()
