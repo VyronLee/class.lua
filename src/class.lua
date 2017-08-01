@@ -20,6 +20,7 @@ local assert = assert
 local setmetatable = setmetatable
 local getmetatable = getmetatable
 local rawget = rawget
+local rawset = rawset
 
 local _hash_code = 0x0
 local _hash_code_generator = function()
@@ -40,7 +41,7 @@ local _default_alloc = function(aClass)
         end,
         __newindex = function(t, keyname, value)
             assert(keyname ~= "static", "'static' is a keyword, please use others instead.")
-            t[keyname] = value
+            rawset(t, keyname, value)
         end,
         __metatable = aClass,   -- fake meta
         __eq = function(self, other)
