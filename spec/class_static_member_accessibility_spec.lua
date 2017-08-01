@@ -10,8 +10,8 @@ describe("A static member", function()
         end
         local instance = classA:new()
 
-        assert.equal(classA.width, 5)
-        assert.equal(classA:getWidth(), 6)
+        assert.equal(5, classA.width)
+        assert.equal(6, classA:getWidth())
         assert.has_error(function()
             print(instance.width)
         end)
@@ -29,8 +29,8 @@ describe("A static member", function()
             return 6
         end
 
-        assert.equal(classB.width, 5)
-        assert.equal(classB:getWidth(), 6)
+        assert.equal(5, classB.width)
+        assert.equal(6, classB:getWidth())
         assert.has_error(function()
             local instance = classB:new()
             print(instance.width)

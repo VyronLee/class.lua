@@ -20,8 +20,8 @@ install:
   - luarocks install luacov-coveralls
 
 script:
-  - luacheck --no-unused-args --std max+busted *.lua spec
-  - busted --verbose --coverage
+  - luacheck --no-unused-args --std max+busted src
+  - busted
 
 after_success:
   - luacov-coveralls --exclude $TRAVIS_BUILD_DIR/lua_install

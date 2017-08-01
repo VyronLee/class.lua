@@ -1,38 +1,43 @@
-local class = require "class"
+require "class"._SPEC = 1
 
 describe("A class", function()
 
     describe("created without super class", function()
         it("has the correct class name", function()
-            local classA = class("ClassA")
+            local classA = require "spec/classes".classA
             assert.truthy(classA)
-            assert.equal(classA.__name, "ClassA")
+            assert.equal("ClassA", classA.__name)
         end)
     end)
 
     describe("created with super class", function()
-        local classA = class("ClassA")
-        local classB = class("ClassB", classA)
-
         it("has the correct class name and super class name", function()
-            assert.equal(classA.__name, "ClassA")
-            assert.equal(classB.__name, "ClassB")
+            local classA = require "spec/classes".classA
+            local classB = require "spec/classes".classB
+            assert.equal("ClassA", classA.__name)
+            assert.equal("ClassB", classB.__name)
             assert.equal(classB.__super, classA)
             assert.equal(classB.__super.__name, "ClassA")
         end)
 
         it("has the correct inherite relation", function()
+            local classA = require "spec/classes".classA
+            local classB = require "spec/classes".classB
             assert.is_true(classB:is_subclass_of(classA))
         end)
-    end)
 
+        it("can load it's implementation from another file", function()
+            local classA = require "spec/classes".classA
+            assert.not_nil(classA.number6)
+        end)
+    end)
 end)
 
 describe("An object", function()
 
     describe("instantiated from class", function()
         it("is the instance of it", function()
-            local classA = class("ClassA")
+            local classA = require "spec/classes".classA
             local instance = classA:new()
             assert.is_true(instance:is_instance_of(classA))
         end)
@@ -40,8 +45,8 @@ describe("An object", function()
 
     describe("instantiated from class with super class", function()
         it("is the instance both of them", function()
-            local classA = class("ClassA")
-            local classB = class("ClassB", classA)
+            local classA = require "spec/classes".classA
+            local classB = require "spec/classes".classB
             local instance = classB()
 
             assert.is_true(instance:is_instance_of(classB))
