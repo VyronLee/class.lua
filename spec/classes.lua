@@ -1,5 +1,5 @@
 local class = require "class"
-local classA = class("ClassA"):implements("spec/classA-impl.lua")
+local classA = class("ClassA"):implements("spec/classA-impl")
 local classB = class("ClassB", classA)
 
 return {

@@ -21,6 +21,10 @@ local setmetatable = setmetatable
 local getmetatable = getmetatable
 local rawget = rawget
 local rawset = rawset
+local gmatch = string.gmatch
+local gsub   = string.gsub
+local fopen  = io.open
+local fclose = io.close
 
 local _hash_code = 0x0
 local _hash_code_generator = function()
@@ -171,9 +175,27 @@ local _is_instance_of = function(anInstance, aClass)
     return _is_subclass_of(cls, aClass)
 end
 
+local _file_exist = function(filepath)
+    local file = fopen(filepath, "r")
+    if file then fclose(file); return true end
+    return false
+end
+
+local _search_paths = function(filename)
+    for path in gmatch(package.path, "([^;]+)") do
+        path = gsub(path, "?", filename)
+        if _file_exist(path) then
+            return path
+        end
+    end
+end
+
 local _implements = function(aClass, filename)
+    local path = _search_paths(filename)
+    assert(path, "_implements() - file not found: " .. filename)
+
     setmetatable(aClass.env, {__index = _G})
-    assert(loadfile(filename, "bt", aClass.env))()
+    assert(loadfile(path, "bt", aClass.env))()
     -- busted will change the behavior of the metatable during testing,
     -- when set the metatable to 'nil', things will get wrong.
     if class._SPEC <= 0 then

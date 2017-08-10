@@ -3,6 +3,6 @@ return {
     _all = {
         coverage = true,
         verbose = true,
-        lpath="./src/?.lua;./src/?/?.lua;./external/?.lua;./external/?/?.lua"
+        lpath="./src/?.lua;./external/?.lua"
     },
 }
