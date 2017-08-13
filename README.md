@@ -17,12 +17,12 @@
 | initialize| 相当于构造函数，使用new生成对象后会自动调用。如有继承关系，会先调用父类的initialize，再调用子类的initialize|
 | unintialize|相当于析构函数，使用destroy删除对象后会自动调用。如有继承关系，会先调用子类的uninitialize，再调用父类的uninitialize|
 
-2. 提供`static`“保留字”，在`static`中定义的成员则为静态对象/函数，静态成员会受到调用保护，只能使用“类”调用，不能从对象中调用。
-
-3. 提供两个自定义“metamethod”：`__alloc`以及`__dealloc`，
+2. 提供两个自定义“metamethod”：`__alloc`以及`__dealloc`，
 使用者可制定自己的对象生成与销毁处理逻辑，该功能对于实现“对象池”十分方便。
 
-4. 提供`is_subclass_of`与`is_instance_of`函数，分别用于检测是否为指定类的子类或者实例。
+3. 提供`is_subclass_of`与`is_instance_of`函数，分别用于检测是否为指定类的子类或者实例。
+
+4. 提供`implements`能力，可以从另一个文件加载类的具体实现，类似于'.h'与'.c/cpp'的关系
 
 # Installation
 
@@ -60,19 +60,27 @@ instanceA:destroy()
 instanceB:destroy()
 ```
 
-定义静态成员：
+加载类具体实现：
+
+file: decl/classA.lua
 
 ``` lua
--- 单例对象
-ClassA.static.kInstance = ClassA:new()
+local classA = class("classA"):implements("impl/classA.impl")
 
--- 单例函数
-function ClassA.static:instance()
-    return ClassA.kInstance
+return classA
+```
+
+file: impl/classA.impl.lua
+
+``` lua
+function initialize(self)
+    print("initializer in classA.impl!")
 end
 
--- 单例函数调用
-local instance = ClassA:instance()
+function uninitialize(self)
+    print("uninitializer in classA.impl!")
+end
+
 ```
 
 # UnitTest

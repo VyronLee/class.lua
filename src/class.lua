@@ -11,20 +11,19 @@
 local class = {
     _AUTHOR      = "VyronLee (lwz_jz@hotmail.com)",
     _LICENSE     = "MIT License",
-    _VERSION     = "v1.0.1",
+    _VERSION     = "v1.0.2",
     _VERBOSE     = 0,
-    _SPEC        = 0,
 }
 
 local assert = assert
 local setmetatable = setmetatable
 local getmetatable = getmetatable
 local rawget = rawget
-local rawset = rawset
 local gmatch = string.gmatch
 local gsub   = string.gsub
 local fopen  = io.open
 local fclose = io.close
+local setfenv = setfenv
 
 local _hash_code = 0x0
 local _hash_code_generator = function()
@@ -32,22 +31,15 @@ local _hash_code_generator = function()
     return _hash_code
 end
 
-local _default_alloc = function(aClass)
+local _default_alloc = function(a_class)
     local instance = {
         __hashcode = _hash_code_generator(),
-        __class    = aClass,
+        __class    = a_class,
     }
 
     local meta = {
-        __index = function(_, keyname)
-            assert(not aClass.static[keyname], "Cannot call static member from instance!")
-            return aClass[keyname]
-        end,
-        __newindex = function(t, keyname, value)
-            assert(keyname ~= "static", "'static' is a keyword, please use others instead.")
-            rawset(t, keyname, value)
-        end,
-        __metatable = aClass,   -- fake meta
+        __index = a_class,
+        __metatable = a_class,
         __eq = function(self, other)
             return self.__hashcode == other.__hashcode
         end,
@@ -69,61 +61,60 @@ local _default_alloc = function(aClass)
     return instance
 end
 
-local _default_dealloc = function(anInstance)
+local _default_dealloc = function(an_instance)
     -- nothing to do
 end
 
 local _depth_first_initialize, _bread_first_uninitialize
 
-_depth_first_initialize = function(aClass, anInstance, ...)
-    if aClass.__super then
-        _depth_first_initialize(aClass.__super, anInstance, ...)
+_depth_first_initialize = function(a_class, an_instance, ...)
+    if a_class.__super then
+        _depth_first_initialize(a_class.__super, an_instance, ...)
     end
-    local initializer = rawget(aClass, "initialize")
+    local initializer = rawget(a_class, "initialize")
     if initializer then
-        initializer(anInstance, ...)
+        initializer(an_instance, ...)
     end
 end
 
-_bread_first_uninitialize = function(aClass, anInstance)
-    local uninitializer = rawget(aClass, "uninitialize")
+_bread_first_uninitialize = function(a_class, an_instance)
+    local uninitializer = rawget(a_class, "uninitialize")
     if uninitializer then
-        uninitializer(anInstance)
+        uninitializer(an_instance)
     end
-    if aClass.__super then
-        _bread_first_uninitialize(aClass.__super, anInstance)
+    if a_class.__super then
+        _bread_first_uninitialize(a_class.__super, an_instance)
     end
 end
 
 local classbase = {
-    new = function(aClass, ...)
-        assert(type(aClass) == "table", "You must use Class:new() instead of Class.new()")
+    new = function(a_class, ...)
+        assert(type(a_class) == "table", "You must use Class:new() instead of Class.new()")
 
-        local instance = aClass:allocate()
-        _depth_first_initialize(aClass, instance, ...)
+        local instance = a_class:allocate()
+        _depth_first_initialize(a_class, instance, ...)
         return instance
     end,
 
-    destroy = function(anInstance)
-        assert(type(anInstance) == "table", "You must use Class:destroy() instead of Class.destroy()")
+    destroy = function(an_instance)
+        assert(type(an_instance) == "table", "You must use Class:destroy() instead of Class.destroy()")
 
-        _bread_first_uninitialize(anInstance.__class, anInstance)
-        anInstance:deallocate()
+        _bread_first_uninitialize(an_instance.__class, an_instance)
+        an_instance:deallocate()
     end,
 
-    allocate = function(aClass, ...)
-        if aClass.__alloc then
-            return aClass:__alloc()
+    allocate = function(a_class, ...)
+        if a_class.__alloc then
+            return a_class:__alloc()
         end
-        return _default_alloc(aClass)
+        return _default_alloc(a_class)
     end,
 
-    deallocate = function(anInstance, ...)
-        if anInstance.__dealloc then
-            anInstance:__dealloc()
-            return
+    deallocate = function(an_instance, ...)
+        if an_instance.__dealloc then
+            return an_instance:__dealloc()
         end
-        _default_dealloc(anInstance)
+        _default_dealloc(an_instance)
     end,
 
     default_alloc   = _default_alloc,
@@ -165,14 +156,14 @@ local _is_subclass_of = function(subclass, super)
     return false
 end
 
-local _is_instance_of = function(anInstance, aClass)
-    assert(_is_class(anInstance), "_is_instance_of() - `anInstance` is not inherited from class!")
-    assert(_is_class(aClass), "_is_instance_of() - `aClass` is not a class!")
-    assert(anInstance.__hashcode, "_is_instance_of() - `anInstance` is not an instance!")
-    assert(not aClass.__hashcode, "_is_instance_of() - `aClass` can not be an instance!")
+local _is_instance_of = function(an_instance, a_class)
+    assert(_is_class(an_instance), "_is_instance_of() - `an_instance` is not inherited from class!")
+    assert(_is_class(a_class), "_is_instance_of() - `a_class` is not a class!")
+    assert(an_instance.__hashcode, "_is_instance_of() - `an_instance` is not an instance!")
+    assert(not a_class.__hashcode, "_is_instance_of() - `a_class` can not be an instance!")
 
-    local cls = anInstance.__class
-    return _is_subclass_of(cls, aClass)
+    local cls = an_instance.__class
+    return _is_subclass_of(cls, a_class)
 end
 
 local _file_exist = function(filepath)
@@ -190,53 +181,56 @@ local _search_paths = function(filename)
     end
 end
 
-local _implements = function(aClass, filename)
+local _implements = function(a_class, filename)
     local path = _search_paths(filename)
     assert(path, "_implements() - file not found: " .. filename)
 
-    setmetatable(aClass.env, {__index = _G})
-    assert(loadfile(path, "bt", aClass.env))()
-    -- busted will change the behavior of the metatable during testing,
-    -- when set the metatable to 'nil', things will get wrong.
-    if class._SPEC <= 0 then
-        setmetatable(aClass.env, nil)
+    local env = setmetatable({}, {
+        __index = function(t, k)
+            return a_class[k] or _G[k]
+        end,
+        __newindex = function(t, k, v)
+            a_class[k] = v
+        end,
+    })
+
+    if _VERSION <= "Lua 5.1" then
+        setfenv(assert(loadfile(path, "bt")), env)()
+    else
+        assert(loadfile(path, "bt", env))()
     end
 
-    return aClass
+    return a_class
 end
 
 local _create_class = function(name, super)
-    assert(type(name) == "string", "_createClas() - string expected, got: ".. type(name))
+    assert(type(name) == "string", "_createClass() - string expected, got: ".. type(name))
 
-    local aClass = {
+    local a_class = {
         __name  = name,
         __super = super,
-
-        env = {
-            static = setmetatable({}, {__index = super and super.static}),
-        },
 
         is_instance_of = _is_instance_of,
         is_subclass_of = _is_subclass_of,
 
         implements = _implements,
+
+        initialize   = function() end,
+        uninitialize = function() end,
     }
 
-    setmetatable(aClass, {
+    setmetatable(a_class, {
         __index = function(_, keyname)
-            return rawget(aClass, "env").static[keyname]
-                or rawget(aClass, "env")[keyname]
-                or (super and super[keyname]
-                or classbase[keyname])
+            return super and super[keyname] or classbase[keyname]
         end,
-        __metatable = super or classbase,    -- fake meta
-        __call = function(_, ...) return aClass:new(...) end,
+        __metatable = super or classbase,
+        __call = function(_, ...) return a_class:new(...) end,
         __tostring = function()
             return "classname: " .. name
         end,
     })
 
-    return aClass
+    return a_class
 end
 
 class.is = _is_class
