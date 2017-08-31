@@ -17,7 +17,6 @@ local class = {
 
 local assert = assert
 local setmetatable = setmetatable
-local getmetatable = getmetatable
 local rawget = rawget
 local gmatch = string.gmatch
 local gsub   = string.gsub
@@ -39,7 +38,6 @@ local _default_alloc = function(a_class)
 
     local meta = {
         __index = a_class,
-        __metatable = a_class,
         __eq = function(self, other)
             return self.__hashcode == other.__hashcode
         end,
@@ -121,29 +119,37 @@ local classbase = {
     default_dealloc = _default_dealloc,
 }
 
-local _get_base_metatable = function(aClassOrAnInstance)
-    local basemeta
-    local meta = getmetatable(aClassOrAnInstance)
-    while meta do
-        basemeta = meta
-        meta = getmetatable(meta)
+local _get_super_base
+
+_get_super_base = function(tocheck)
+    if tocheck.__hashcode then
+        return _get_super_base(tocheck.__class)
     end
-    return basemeta
+    return tocheck.__super and _get_super_base(tocheck.__super) or tocheck
 end
 
 local _is_class = function(target)
-    return _get_base_metatable(target) == classbase
+    return _get_super_base(target) == classbase
+end
+
+local _is_instance = function(target)
+    return not not target.__hashcode
 end
 
 local _typeof = function(target)
-    return getmetatable(target)
+    assert(_is_class(target), "_typeof() - `target` must be a class or an instance!" )
+
+    if _is_instance(target) then
+        return target.__class
+    end
+    return target
 end
 
 local _is_subclass_of = function(subclass, super)
     assert(_is_class(subclass), "_is_subclass_of() - `subclass` is not a class!")
     assert(_is_class(super), "_is_subclass_of() - `super` is not a class!")
-    assert(not subclass.__hashcode, "_is_subclass_of() - `subclass` cannot be an instance!")
-    assert(not subclass.__hashcode, "_is_subclass_of() - `super` cannot be an instance!")
+    assert(not _is_instance(subclass), "_is_subclass_of() - `subclass` cannot be an instance!")
+    assert(not _is_instance(subclass), "_is_subclass_of() - `super` cannot be an instance!")
 
     local cls = subclass
     repeat
@@ -159,8 +165,8 @@ end
 local _is_instance_of = function(an_instance, a_class)
     assert(_is_class(an_instance), "_is_instance_of() - `an_instance` is not inherited from class!")
     assert(_is_class(a_class), "_is_instance_of() - `a_class` is not a class!")
-    assert(an_instance.__hashcode, "_is_instance_of() - `an_instance` is not an instance!")
-    assert(not a_class.__hashcode, "_is_instance_of() - `a_class` can not be an instance!")
+    assert(_is_instance(an_instance), "_is_instance_of() - `an_instance` is not an instance!")
+    assert(not _is_instance(a_class), "_is_instance_of() - `a_class` can not be an instance!")
 
     local cls = an_instance.__class
     return _is_subclass_of(cls, a_class)
@@ -206,6 +212,8 @@ end
 local _create_class = function(name, super)
     assert(type(name) == "string", "_createClass() - string expected, got: ".. type(name))
 
+    super = super or classbase
+
     local a_class = {
         __name  = name,
         __super = super,
@@ -220,10 +228,8 @@ local _create_class = function(name, super)
     }
 
     setmetatable(a_class, {
-        __index = function(_, keyname)
-            return super and super[keyname] or classbase[keyname]
-        end,
-        __metatable = super or classbase,
+        __index = super,
+        __metatable = super,
         __call = function(_, ...) return a_class:new(...) end,
         __tostring = function()
             return "classname: " .. name
