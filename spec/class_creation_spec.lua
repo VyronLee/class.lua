@@ -7,6 +7,7 @@ describe("A class", function()
             local classA = class("ClassA")
             assert.truthy(classA)
             assert.equal("ClassA", classA.__name)
+            assert.equal("ClassA", tostring(classA))
         end)
     end)
 
@@ -30,6 +31,14 @@ end)
 
 describe("An object", function()
 
+    it("can use 'tostring' to output it's hashcode", function()
+        local classA = class("ClassA")
+        local instanceA = classA:new()
+        local instanceB = classA:new()
+        assert.equal("ClassA: 0x1", tostring(instanceA))
+        assert.equal("ClassA: 0x2", tostring(instanceB))
+    end)
+
     describe("instantiated from class", function()
         it("is the instance of it", function()
             local classA = class("ClassA")
@@ -47,6 +56,17 @@ describe("An object", function()
             assert.is_true(instance:is_instance_of(classB))
             assert.is_true(instance:is_instance_of(classA))
         end)
+    end)
+
+    it("and another can use operator '=' determine equals or not", function()
+        local classA = class("classA")
+        local instance1 = classA()
+        local instance2 = classA()
+
+        for k,v in pairs(instance1) do
+            instance2[k] = v
+        end
+        assert.is_true(instance1 == instance2)
     end)
 
 end)

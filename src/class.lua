@@ -24,25 +24,27 @@ local fopen  = io.open
 local fclose = io.close
 local setfenv = setfenv
 
-local _hash_code = 0x0
-local _hash_code_generator = function()
-    _hash_code = _hash_code + 1
-    return _hash_code
+local __hash_code = 0x0
+local __hash_code_generator = function()
+    __hash_code = __hash_code + 1
+    return __hash_code
 end
 
-local _default_alloc = function(a_class)
+local __instance_equal_comparator = function(l, r)
+    return l.__hashcode == r.__hashcode
+end
+
+local __default_alloc = function(a_class)
     local instance = {
-        __hashcode = _hash_code_generator(),
+        __hashcode = __hash_code_generator(),
         __class    = a_class,
     }
 
     local meta = {
         __index = a_class,
-        __eq = function(self, other)
-            return self.__hashcode == other.__hashcode
-        end,
+        __eq = __instance_equal_comparator,
         __tostring = function()
-            return string.format("classname: %s, hashcode: %s", instance.__name, instance.__hashcode)
+            return string.format("%s: 0x%X", instance.__name, instance.__hashcode)
         end,
     }
     if class._VERBOSE >= 1 then
@@ -59,15 +61,15 @@ local _default_alloc = function(a_class)
     return instance
 end
 
-local _default_dealloc = function(an_instance)
+local __default_dealloc = function(an_instance)
     -- nothing to do
 end
 
-local _depth_first_initialize, _bread_first_uninitialize
+local __depth_first_initialize, __bread_first_uninitialize
 
-_depth_first_initialize = function(a_class, an_instance, ...)
+__depth_first_initialize = function(a_class, an_instance, ...)
     if a_class.__super then
-        _depth_first_initialize(a_class.__super, an_instance, ...)
+        __depth_first_initialize(a_class.__super, an_instance, ...)
     end
     local initializer = rawget(a_class, "initialize")
     if initializer then
@@ -75,13 +77,13 @@ _depth_first_initialize = function(a_class, an_instance, ...)
     end
 end
 
-_bread_first_uninitialize = function(a_class, an_instance)
+__bread_first_uninitialize = function(a_class, an_instance)
     local uninitializer = rawget(a_class, "uninitialize")
     if uninitializer then
         uninitializer(an_instance)
     end
     if a_class.__super then
-        _bread_first_uninitialize(a_class.__super, an_instance)
+        __bread_first_uninitialize(a_class.__super, an_instance)
     end
 end
 
@@ -90,14 +92,14 @@ local classbase = {
         assert(type(a_class) == "table", "You must use Class:new() instead of Class.new()")
 
         local instance = a_class:allocate()
-        _depth_first_initialize(a_class, instance, ...)
+        __depth_first_initialize(a_class, instance, ...)
         return instance
     end,
 
     destroy = function(an_instance)
         assert(type(an_instance) == "table", "You must use Class:destroy() instead of Class.destroy()")
 
-        _bread_first_uninitialize(an_instance.__class, an_instance)
+        __bread_first_uninitialize(an_instance.__class, an_instance)
         an_instance:deallocate()
     end,
 
@@ -105,51 +107,51 @@ local classbase = {
         if a_class.__alloc then
             return a_class:__alloc()
         end
-        return _default_alloc(a_class)
+        return __default_alloc(a_class)
     end,
 
     deallocate = function(an_instance, ...)
         if an_instance.__dealloc then
             return an_instance:__dealloc()
         end
-        _default_dealloc(an_instance)
+        __default_dealloc(an_instance)
     end,
 
-    default_alloc   = _default_alloc,
-    default_dealloc = _default_dealloc,
+    default_alloc   = __default_alloc,
+    default_dealloc = __default_dealloc,
 }
 
-local _get_super_base
+local __get_super_base
 
-_get_super_base = function(tocheck)
+__get_super_base = function(tocheck)
     if tocheck.__hashcode then
-        return _get_super_base(tocheck.__class)
+        return __get_super_base(tocheck.__class)
     end
-    return tocheck.__super and _get_super_base(tocheck.__super) or tocheck
+    return tocheck.__super and __get_super_base(tocheck.__super) or tocheck
 end
 
-local _is_class = function(target)
-    return _get_super_base(target) == classbase
+local __is_class = function(target)
+    return __get_super_base(target) == classbase
 end
 
-local _is_instance = function(target)
+local __is_instance = function(target)
     return not not target.__hashcode
 end
 
-local _typeof = function(target)
-    assert(_is_class(target), "_typeof() - `target` must be a class or an instance!" )
+local __typeof = function(target)
+    assert(__is_class(target), "__typeof() - `target` must be a class or an instance!" )
 
-    if _is_instance(target) then
+    if __is_instance(target) then
         return target.__class
     end
     return target
 end
 
-local _is_subclass_of = function(subclass, super)
-    assert(_is_class(subclass), "_is_subclass_of() - `subclass` is not a class!")
-    assert(_is_class(super), "_is_subclass_of() - `super` is not a class!")
-    assert(not _is_instance(subclass), "_is_subclass_of() - `subclass` cannot be an instance!")
-    assert(not _is_instance(subclass), "_is_subclass_of() - `super` cannot be an instance!")
+local __is_subclass_of = function(subclass, super)
+    assert(__is_class(subclass), "__is_subclass_of() - `subclass` is not a class!")
+    assert(__is_class(super), "__is_subclass_of() - `super` is not a class!")
+    assert(not __is_instance(subclass), "__is_subclass_of() - `subclass` cannot be an instance!")
+    assert(not __is_instance(subclass), "__is_subclass_of() - `super` cannot be an instance!")
 
     local cls = subclass
     repeat
@@ -162,34 +164,34 @@ local _is_subclass_of = function(subclass, super)
     return false
 end
 
-local _is_instance_of = function(an_instance, a_class)
-    assert(_is_class(an_instance), "_is_instance_of() - `an_instance` is not inherited from class!")
-    assert(_is_class(a_class), "_is_instance_of() - `a_class` is not a class!")
-    assert(_is_instance(an_instance), "_is_instance_of() - `an_instance` is not an instance!")
-    assert(not _is_instance(a_class), "_is_instance_of() - `a_class` can not be an instance!")
+local __is_instance_of = function(an_instance, a_class)
+    assert(__is_class(an_instance), "__is_instance_of() - `an_instance` is not inherited from class!")
+    assert(__is_class(a_class), "__is_instance_of() - `a_class` is not a class!")
+    assert(__is_instance(an_instance), "__is_instance_of() - `an_instance` is not an instance!")
+    assert(not __is_instance(a_class), "__is_instance_of() - `a_class` can not be an instance!")
 
     local cls = an_instance.__class
-    return _is_subclass_of(cls, a_class)
+    return __is_subclass_of(cls, a_class)
 end
 
-local _file_exist = function(filepath)
+local __file_exist = function(filepath)
     local file = fopen(filepath, "r")
     if file then fclose(file); return true end
     return false
 end
 
-local _search_paths = function(filename)
+local __search_paths = function(filename)
     for path in gmatch(package.path, "([^;]+)") do
         path = gsub(path, "?", filename)
-        if _file_exist(path) then
+        if __file_exist(path) then
             return path
         end
     end
 end
 
-local _implements = function(a_class, filename)
-    local path = _search_paths(filename)
-    assert(path, "_implements() - file not found: " .. filename)
+local __implements = function(a_class, filename)
+    local path = __search_paths(filename)
+    assert(path, "__implements() - file not found: " .. filename)
 
     local env = setmetatable({}, {
         __index = function(t, k)
@@ -209,8 +211,8 @@ local _implements = function(a_class, filename)
     return a_class
 end
 
-local _create_class = function(name, super)
-    assert(type(name) == "string", "_createClass() - string expected, got: ".. type(name))
+local __create_class = function(name, super)
+    assert(type(name) == "string", "__create_class() - string expected, got: ".. type(name))
 
     super = super or classbase
 
@@ -218,10 +220,10 @@ local _create_class = function(name, super)
         __name  = name,
         __super = super,
 
-        is_instance_of = _is_instance_of,
-        is_subclass_of = _is_subclass_of,
+        is_instance_of = __is_instance_of,
+        is_subclass_of = __is_subclass_of,
 
-        implements = _implements,
+        implements = __implements,
 
         initialize   = function() end,
         uninitialize = function() end,
@@ -232,16 +234,16 @@ local _create_class = function(name, super)
         __metatable = super,
         __call = function(_, ...) return a_class:new(...) end,
         __tostring = function()
-            return "classname: " .. name
+            return name
         end,
     })
 
     return a_class
 end
 
-class.is = _is_class
-class.typeof = _typeof
+class.is = __is_class
+class.typeof = __typeof
 
-setmetatable(class, {__call = function(_, name, super) return _create_class(name, super) end})
+setmetatable(class, {__call = function(_, name, super) return __create_class(name, super) end})
 
 return class
