@@ -195,7 +195,7 @@ local __implements = function(a_class, filename)
 
     local env = setmetatable({}, {
         __index = function(t, k)
-            return a_class[k] or _G[k]
+            return k == "self" and a_class or a_class[k] or _G[k]
         end,
         __newindex = function(t, k, v)
             a_class[k] = v
