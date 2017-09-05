@@ -131,11 +131,14 @@ __get_super_base = function(tocheck)
 end
 
 local __is_class = function(target)
+    if type(target) ~= "table" then
+        return false
+    end
     return __get_super_base(target) == classbase
 end
 
 local __is_instance = function(target)
-    return not not target.__hashcode
+    return __is_class(target) and (not not target.__hashcode)
 end
 
 local __typeof = function(target)
@@ -242,6 +245,7 @@ local __create_class = function(name, super)
 end
 
 class.is = __is_class
+class.is_instance = __is_instance
 class.typeof = __typeof
 
 setmetatable(class, {__call = function(_, name, super) return __create_class(name, super) end})
