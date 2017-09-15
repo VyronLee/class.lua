@@ -30,6 +30,8 @@ local __hash_code_generator = function()
     return __hash_code
 end
 
+local __CLASS_IDENTITY = "class"
+
 local __instance_equal_comparator = function(l, r)
     return l.__hashcode == r.__hashcode
 end
@@ -119,6 +121,12 @@ local classbase = {
 
     default_alloc   = __default_alloc,
     default_dealloc = __default_dealloc,
+
+    classname = function()
+        return __CLASS_IDENTITY
+    end,
+
+    __name = __CLASS_IDENTITY,
 }
 
 local __get_super_base
@@ -230,6 +238,8 @@ local __create_class = function(name, super)
 
         initialize   = function() end,
         uninitialize = function() end,
+        super        = function() return super end,
+        classname    = function() return name  end,
     }
 
     setmetatable(a_class, {
