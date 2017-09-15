@@ -122,6 +122,8 @@ local classbase = {
     default_alloc   = __default_alloc,
     default_dealloc = __default_dealloc,
 
+    super = function() end,
+
     classname = function()
         return __CLASS_IDENTITY
     end,
