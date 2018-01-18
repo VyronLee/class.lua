@@ -5,12 +5,12 @@
 --      author:  VyronLee, lwz_jz@hotmail.com
 --
 --    Modified:  2017-03-13 18:19
---   Copyright:  Copyright (c) 2017, VyronLee
+--   Copyright:  Copyright (c) 2018, VyronLee, Apache License
 --============================================================
 
 local class = {
     _AUTHOR      = "VyronLee (lwz_jz@hotmail.com)",
-    _LICENSE     = "MIT License",
+    _LICENSE     = "Apache License 2.0",
     _VERSION     = "v1.0.2",
     _VERBOSE     = 0,
 }
@@ -36,6 +36,14 @@ local __instance_equal_comparator = function(l, r)
     return l.__hashcode == r.__hashcode
 end
 
+local __instance_less_than_comparator = function(l, r)
+    return l.__hashcode < r.__hashcode
+end
+
+local __instance_less_equal_comparator = function(l, r)
+    return l.__hashcode <= r.__hashcode
+end
+
 local __default_alloc = function(a_class)
     local instance = {
         __hashcode = __hash_code_generator(),
@@ -44,8 +52,22 @@ local __default_alloc = function(a_class)
 
     local meta = {
         __index = a_class,
-        __eq = __instance_equal_comparator,
-        __tostring = function()
+
+        __eq = a_class.__eq or __instance_equal_comparator,
+        __lt = a_class.__lt or __instance_less_than_comparator,
+        __le = a_class.__le or __instance_less_equal_comparator,
+
+        __unm = a_class.__unm,
+        __add = a_class.__add,
+        __sub = a_class.__sub,
+        __mul = a_class.__mul,
+        __div = a_class.__div,
+        __mod = a_class.__mod,
+        __pow = a_class.__pow,
+
+        __gc = a_class.__gc,
+
+        __tostring = a_class.__tostring or function()
             return string.format("%s: 0x%X", instance.__name, instance.__hashcode)
         end,
     }
@@ -67,7 +89,7 @@ local __default_dealloc = function(an_instance)
     -- nothing to do
 end
 
-local __depth_first_initialize, __bread_first_uninitialize
+local __depth_first_initialize, __bread_first_finalize
 
 __depth_first_initialize = function(a_class, an_instance, ...)
     if a_class.__super then
@@ -79,13 +101,13 @@ __depth_first_initialize = function(a_class, an_instance, ...)
     end
 end
 
-__bread_first_uninitialize = function(a_class, an_instance)
-    local uninitializer = rawget(a_class, "uninitialize")
-    if uninitializer then
-        uninitializer(an_instance)
+__bread_first_finalize = function(a_class, an_instance)
+    local finalizer = rawget(a_class, "finalize")
+    if finalizer then
+        finalizer(an_instance)
     end
     if a_class.__super then
-        __bread_first_uninitialize(a_class.__super, an_instance)
+        __bread_first_finalize(a_class.__super, an_instance)
     end
 end
 
@@ -101,7 +123,7 @@ local classbase = {
     destroy = function(an_instance)
         assert(type(an_instance) == "table", "You must use Class:destroy() instead of Class.destroy()")
 
-        __bread_first_uninitialize(an_instance.__class, an_instance)
+        __bread_first_finalize(an_instance.__class, an_instance)
         an_instance:deallocate()
     end,
 
@@ -238,10 +260,10 @@ local __create_class = function(name, super)
 
         implements = __implements,
 
-        initialize   = function() end,
-        uninitialize = function() end,
-        super        = function() return super end,
-        classname    = function() return name  end,
+        initialize  = function() end,
+        finalize    = function() end,
+        super       = function() return super end,
+        classname   = function() return name  end,
     }
 
     setmetatable(a_class, {

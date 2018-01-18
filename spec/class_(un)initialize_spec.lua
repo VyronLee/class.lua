@@ -4,11 +4,11 @@ describe("An instance", function()
 
     local classA = class("ClassA")
     classA.initialize = function(self) print "classA initialize" end
-    classA.uninitialize = function(self) print "classA uninitialize" end
+    classA.finalize = function(self) print "classA finalize" end
 
     local classB = class("ClassB", classA)
     classB.initialize = function(self) print "classB initialize" end
-    classB.uninitialize = function(self) print "classB uninitialize" end
+    classB.finalize = function(self) print "classB finalize" end
 
     it("it's initialize method will be invoke after new()", function()
         local initialize_messages = {}
@@ -26,25 +26,25 @@ describe("An instance", function()
         assert.are.same(initialize_messages, initialize_messages_expect)
     end)
 
-    it("it's uninitialize method will be invoke after destroy()", function()
+    it("it's finalize method will be invoke after destroy()", function()
         local instanceB = classB:new()
 
-        local uninitialize_messages = {}
+        local finalize_messages = {}
         _G.print = function(msg)
-            table.insert(uninitialize_messages, msg)
+            table.insert(finalize_messages, msg)
         end
 
         instanceB:destroy()
 
-        local uninitialize_messages_expect = {
-            "classB uninitialize",
-            "classA uninitialize",
+        local finalize_messages_expect = {
+            "classB finalize",
+            "classA finalize",
         }
 
-        assert.are.same(uninitialize_messages, uninitialize_messages_expect)
+        assert.are.same(finalize_messages, finalize_messages_expect)
     end)
 
-    it("allow none initialize/uninitialize methods", function()
+    it("allow none initialize/finalize methods", function()
         local classC = class("ClassC", classB)
 
         local initialize_messages = {}

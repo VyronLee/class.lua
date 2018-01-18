@@ -15,7 +15,7 @@
 | new       | 相当于c++中的new，用于新建一个对象|
 | destroy   | 相当于c++中的delete, 用于删除一个对象|
 | initialize| 相当于构造函数，使用new生成对象后会自动调用。如有继承关系，会先调用父类的initialize，再调用子类的initialize|
-| unintialize|相当于析构函数，使用destroy删除对象后会自动调用。如有继承关系，会先调用子类的uninitialize，再调用父类的uninitialize|
+| finalize|相当于析构函数，使用destroy删除对象后会自动调用。如有继承关系，会先调用子类的finalize，再调用父类的finalize|
 
 2. 提供两个自定义“metamethod”：`__alloc`以及`__dealloc`，
 使用者可制定自己的对象生成与销毁处理逻辑，该功能对于实现“对象池”十分方便。
@@ -42,8 +42,8 @@ function ClassA:initialize()
     print("Class:initialize()")
 end
 
-function ClassA:uninitialize()
-    print("Class:uninitialize()")
+function ClassA:finalize()
+    print("Class:finalize()")
 end
 
 ...
@@ -77,8 +77,8 @@ function initialize(self)
     print("initializer in classA.impl!")
 end
 
-function uninitialize(self)
-    print("uninitializer in classA.impl!")
+function finalize(self)
+    print("finalizer in classA.impl!")
 end
 
 ```
