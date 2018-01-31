@@ -12,7 +12,7 @@
 
 |   函数名  |     功能说明       |
 |-----------|--------------------|
-| new       | 相当于c++中的new，用于新建一个对象|
+| create    | 相当于c++中的new，用于新建一个对象|
 | destroy   | 相当于c++中的delete, 用于删除一个对象|
 | initialize| 相当于构造函数，使用new生成对象后会自动调用。如有继承关系，会先调用父类的initialize，再调用子类的initialize|
 | finalize|相当于析构函数，使用destroy删除对象后会自动调用。如有继承关系，会先调用子类的finalize，再调用父类的finalize|
@@ -53,8 +53,8 @@ end
 实例化与显式销毁对象：
 
 ``` lua
-local instanceA = ClassA:new()
-local instanceB = ClassB:new()
+local instanceA = ClassA:create()
+local instanceB = ClassB:create()
 
 instanceA:destroy()
 instanceB:destroy()

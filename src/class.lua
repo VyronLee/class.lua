@@ -16,13 +16,18 @@ local class = {
 }
 
 local assert = assert
+local load = load
+local loadfile = loadfile
 local setmetatable = setmetatable
 local rawget = rawget
+
 local gmatch = string.gmatch
 local gsub   = string.gsub
+local format = string.format
+local dump   = string.dump
+
 local fopen  = io.open
 local fclose = io.close
-local setfenv = setfenv
 
 local __hash_code = 0x0
 local __hash_code_generator = function()
@@ -30,7 +35,7 @@ local __hash_code_generator = function()
     return __hash_code
 end
 
-local __CLASS_IDENTITY = "class"
+local __CLASS_IDENTITY = "__class__"
 
 local __instance_equal_comparator = function(l, r)
     return l.__hashcode == r.__hashcode
@@ -42,6 +47,10 @@ end
 
 local __instance_less_equal_comparator = function(l, r)
     return l.__hashcode <= r.__hashcode
+end
+
+local __stringify = function(o)
+    return format("%s: 0x%X", o.__name, o.__hashcode)
 end
 
 local __default_alloc = function(a_class)
@@ -67,9 +76,7 @@ local __default_alloc = function(a_class)
 
         __gc = a_class.__gc,
 
-        __tostring = a_class.__tostring or function()
-            return string.format("%s: 0x%X", instance.__name, instance.__hashcode)
-        end,
+        __tostring = a_class.__tostring or __stringify,
     }
     if class._VERBOSE >= 1 then
         meta.__gc = function(t)
@@ -112,8 +119,8 @@ __bread_first_finalize = function(a_class, an_instance)
 end
 
 local classbase = {
-    new = function(a_class, ...)
-        assert(type(a_class) == "table", "You must use Class:new() instead of Class.new()")
+    create = function(a_class, ...)
+        assert(type(a_class) == "table", "You must use Class:create() instead of Class.create()")
 
         local instance = a_class:allocate()
         __depth_first_initialize(a_class, instance, ...)
@@ -155,11 +162,11 @@ local classbase = {
 
 local __get_super_base
 
-__get_super_base = function(tocheck)
-    if tocheck.__hashcode then
-        return __get_super_base(tocheck.__class)
+__get_super_base = function(target)
+    if target.__hashcode then
+        return __get_super_base(target.__class)
     end
-    return tocheck.__super and __get_super_base(tocheck.__super) or tocheck
+    return target.__super and __get_super_base(target.__super) or target
 end
 
 local __is_class = function(target)
@@ -209,6 +216,10 @@ local __is_instance_of = function(an_instance, a_class)
     return __is_subclass_of(cls, a_class)
 end
 
+local __setfenv = function (chunk, env)
+    return load(dump(chunk), nil, "bt", env)
+end
+
 local __file_exist = function(filepath)
     local file = fopen(filepath, "r")
     if file then fclose(file); return true end
@@ -224,10 +235,13 @@ local __search_paths = function(filename)
     end
 end
 
-local __implements = function(a_class, filename)
+local __default_loader = function(filename)
     local path = __search_paths(filename)
-    assert(path, "__implements() - file not found: " .. filename)
+    assert(path, "__default_loader() - file not found: " .. filename)
+    return assert(loadfile(path, "bt"))
+end
 
+local __implements = function(a_class, filename, loader)
     local env = setmetatable({}, {
         __index = function(t, k)
             return k == "self" and a_class or a_class[k] or _G[k]
@@ -236,12 +250,7 @@ local __implements = function(a_class, filename)
             a_class[k] = v
         end,
     })
-
-    if _VERSION <= "Lua 5.1" then
-        setfenv(assert(loadfile(path, "bt")), env)()
-    else
-        assert(loadfile(path, "bt", env))()
-    end
+    assert((setfenv or __setfenv)((loader or __default_loader)(filename), env))()
 
     return a_class
 end
@@ -269,7 +278,7 @@ local __create_class = function(name, super)
     setmetatable(a_class, {
         __index = super,
         __metatable = super,
-        __call = function(_, ...) return a_class:new(...) end,
+        __call = function(_, ...) return a_class:create(...) end,
         __tostring = function()
             return name
         end,

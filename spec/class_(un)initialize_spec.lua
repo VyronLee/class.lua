@@ -10,13 +10,13 @@ describe("An instance", function()
     classB.initialize = function(self) print "classB initialize" end
     classB.finalize = function(self) print "classB finalize" end
 
-    it("it's initialize method will be invoke after new()", function()
+    it("it's initialize method will be invoke after create()", function()
         local initialize_messages = {}
         _G.print = function(msg)
             table.insert(initialize_messages, msg)
         end
 
-        classB:new()
+        classB:create()
 
         local initialize_messages_expect = {
             "classA initialize",
@@ -27,7 +27,7 @@ describe("An instance", function()
     end)
 
     it("it's finalize method will be invoke after destroy()", function()
-        local instanceB = classB:new()
+        local instanceB = classB:create()
 
         local finalize_messages = {}
         _G.print = function(msg)
@@ -52,7 +52,7 @@ describe("An instance", function()
             table.insert(initialize_messages, msg)
         end
 
-        classC:new()
+        classC:create()
 
         local initialize_messages_expect = {
             "classA initialize",

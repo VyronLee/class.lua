@@ -8,7 +8,7 @@ describe("A object instantiated from class", function()
         classA.getWidth = function(self)
             return self.width
         end
-        local instance = classA:new()
+        local instance = classA:create()
         assert.equal(instance:getWidth(), 1)
     end)
 
@@ -25,7 +25,7 @@ describe("A object instantiated from class", function()
 
         classC.getHeight = function(self) return self.height end
 
-        local instanceC = classC:new()
+        local instanceC = classC:create()
 
         assert.equal(instanceC:getWidth(), 3)
         assert.equal(instanceC:getHeight(), 2)
