@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/VyronLee/class.lua.svg?branch=master)](https://travis-ci.org/VyronLee/class.lua)
 [![Coverage Status](https://coveralls.io/repos/github/VyronLee/class.lua/badge.svg?branch=master)](https://coveralls.io/github/VyronLee/class.lua?branch=master)
-[![License](http://img.shields.io/badge/Licence-MIT-brightgreen.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-brightgreen.svg)](LICENSE)
 
 一个用于实现面向对象编程思想的Lua类模块。
 
