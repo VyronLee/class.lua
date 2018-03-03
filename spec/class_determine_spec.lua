@@ -2,15 +2,15 @@ local class = require "class"
 
 describe("Function tests", function()
 
-    it("'class.is':", function()
+    it("'class.is_class':", function()
         local classA = class("ClassA")
-        assert.is_true(class.is(classA))
-        assert.is_true(class.is(classA()))
-        assert.is_false(class.is(1))
-        assert.is_false(class.is("123"))
-        assert.is_false(class.is(true))
-        assert.is_false(class.is(nil))
-        assert.is_false(class.is({}))
+        assert.is_true(class.is_class(classA))
+        assert.is_true(class.is_class(classA()))
+        assert.is_false(class.is_class(1))
+        assert.is_false(class.is_class("123"))
+        assert.is_false(class.is_class(true))
+        assert.is_false(class.is_class(nil))
+        assert.is_false(class.is_class({}))
     end)
 
     it("'class.is_instance'", function()

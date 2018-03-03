@@ -1,18 +1,17 @@
---------------------------------------------------------------
---        file:  class.lua
---       brief:  Object Orientation for Lua
+------------------------------------------------------------------------
+--        File:  class.lua
+--       Brief:  Object Orientation for Lua
 --
---      author:  VyronLee, lwz_jz@hotmail.com
+--      Author:  VyronLee, lwz_jz@hotmail.com
 --
---    Modified:  2017-03-13 18:19
---   Copyright:  Copyright (c) 2018, VyronLee, Apache License
---============================================================
+--    Modified:  2018-03-03 18:09
+--   Copyright:  Copyright (c) 2018, VyronLee, Apache License 2.0
+--======================================================================
 
 local class = {
     _AUTHOR      = "VyronLee (lwz_jz@hotmail.com)",
     _LICENSE     = "Apache License 2.0",
     _VERSION     = "v1.0.2",
-    _VERBOSE     = 0,
 }
 
 local assert = assert
@@ -49,7 +48,7 @@ local __instance_less_equal_comparator = function(l, r)
     return l.__hashcode <= r.__hashcode
 end
 
-local __stringify = function(o)
+local __instance_stringify = function(o)
     return format("%s: 0x%X", o.__name, o.__hashcode)
 end
 
@@ -58,36 +57,7 @@ local __default_alloc = function(a_class)
         __hashcode = __hash_code_generator(),
         __class    = a_class,
     }
-
-    local meta = {
-        __index = a_class,
-
-        __eq = a_class.__eq or __instance_equal_comparator,
-        __lt = a_class.__lt or __instance_less_than_comparator,
-        __le = a_class.__le or __instance_less_equal_comparator,
-
-        __unm = a_class.__unm,
-        __add = a_class.__add,
-        __sub = a_class.__sub,
-        __mul = a_class.__mul,
-        __div = a_class.__div,
-        __mod = a_class.__mod,
-        __pow = a_class.__pow,
-
-        __gc = a_class.__gc,
-
-        __tostring = a_class.__tostring or __stringify,
-    }
-    if class._VERBOSE >= 1 then
-        meta.__gc = function(t)
-            print("An instance has collected, " .. tostring(t))
-        end
-    end
-    setmetatable(instance, meta)
-
-    if class._VERBOSE >= 1 then
-        print("An instance has allocated, " .. tostring(instance))
-    end
+    setmetatable(instance, a_class)
 
     return instance
 end
@@ -216,7 +186,7 @@ local __is_instance_of = function(an_instance, a_class)
     return __is_subclass_of(cls, a_class)
 end
 
-local __setfenv = function (chunk, env)
+local __setfenv = function(chunk, env)
     return load(dump(chunk), nil, "bt", env)
 end
 
@@ -243,10 +213,10 @@ end
 
 local __implements = function(a_class, filename, loader)
     local env = setmetatable({}, {
-        __index = function(t, k)
+        __index = function(_, k)
             return k == "self" and a_class or a_class[k] or _G[k]
         end,
-        __newindex = function(t, k, v)
+        __newindex = function(_, k, v)
             a_class[k] = v
         end,
     })
@@ -260,34 +230,38 @@ local __create_class = function(name, super)
 
     super = super or classbase
 
-    local a_class = {
-        __name  = name,
-        __super = super,
+    local a_class = {}
+    a_class.__name  = name
+    a_class.__super = super
+    a_class.__index = a_class
 
-        is_instance_of = __is_instance_of,
-        is_subclass_of = __is_subclass_of,
+    a_class.__tostring = __instance_stringify
+    a_class.__eq = __instance_equal_comparator
+    a_class.__lt = __instance_less_than_comparator
+    a_class.__le = __instance_less_equal_comparator
 
-        implements = __implements,
+    a_class.is_instance_of = __is_instance_of
+    a_class.is_subclass_of = __is_subclass_of
 
-        initialize  = function() end,
-        finalize    = function() end,
-        super       = function() return super end,
-        classname   = function() return name  end,
-    }
+    a_class.implements = __implements
 
-    setmetatable(a_class, {
+    a_class.initialize  = function() end
+    a_class.finalize    = function() end
+    a_class.super       = function() return super end
+    a_class.classname   = function() return name  end
+
+    local meta = {
         __index = super,
         __metatable = super,
         __call = function(_, ...) return a_class:create(...) end,
-        __tostring = function()
-            return name
-        end,
-    })
+        __tostring = function() return name end,
+    }
+    setmetatable(a_class, meta)
 
     return a_class
 end
 
-class.is = __is_class
+class.is_class = __is_class
 class.is_instance = __is_instance
 class.typeof = __typeof
 
