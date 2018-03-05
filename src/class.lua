@@ -22,7 +22,6 @@ local rawget = rawget
 
 local gmatch = string.gmatch
 local gsub   = string.gsub
-local format = string.format
 local dump   = string.dump
 
 local fopen  = io.open
@@ -34,101 +33,12 @@ local __hash_code_generator = function()
     return __hash_code
 end
 
-local __CLASS_IDENTITY = "__class__"
+local __CLASS_IDENTITY__ = "__CLASS__"
 
-local __instance_equal_comparator = function(l, r)
-    return l.__hashcode == r.__hashcode
-end
+local classbase = {}
 
-local __instance_less_than_comparator = function(l, r)
-    return l.__hashcode < r.__hashcode
-end
-
-local __instance_less_equal_comparator = function(l, r)
-    return l.__hashcode <= r.__hashcode
-end
-
-local __instance_stringify = function(o)
-    return format("%s: 0x%X", o.__name, o.__hashcode)
-end
-
-local __default_alloc = function(a_class)
-    local instance = {
-        __hashcode = __hash_code_generator(),
-        __class    = a_class,
-    }
-    setmetatable(instance, a_class)
-
-    return instance
-end
-
-local __default_dealloc = function(an_instance)
-    -- nothing to do
-end
-
-local __depth_first_initialize, __bread_first_finalize
-
-__depth_first_initialize = function(a_class, an_instance, ...)
-    if a_class.__super then
-        __depth_first_initialize(a_class.__super, an_instance, ...)
-    end
-    local initializer = rawget(a_class, "initialize")
-    if initializer then
-        initializer(an_instance, ...)
-    end
-end
-
-__bread_first_finalize = function(a_class, an_instance)
-    local finalizer = rawget(a_class, "finalize")
-    if finalizer then
-        finalizer(an_instance)
-    end
-    if a_class.__super then
-        __bread_first_finalize(a_class.__super, an_instance)
-    end
-end
-
-local classbase = {
-    create = function(a_class, ...)
-        assert(type(a_class) == "table", "You must use Class:create() instead of Class.create()")
-
-        local instance = a_class:allocate()
-        __depth_first_initialize(a_class, instance, ...)
-        return instance
-    end,
-
-    destroy = function(an_instance)
-        assert(type(an_instance) == "table", "You must use Class:destroy() instead of Class.destroy()")
-
-        __bread_first_finalize(an_instance.__class, an_instance)
-        an_instance:deallocate()
-    end,
-
-    allocate = function(a_class, ...)
-        if a_class.__alloc then
-            return a_class:__alloc()
-        end
-        return __default_alloc(a_class)
-    end,
-
-    deallocate = function(an_instance, ...)
-        if an_instance.__dealloc then
-            return an_instance:__dealloc()
-        end
-        __default_dealloc(an_instance)
-    end,
-
-    default_alloc   = __default_alloc,
-    default_dealloc = __default_dealloc,
-
-    super = function() end,
-
-    classname = function()
-        return __CLASS_IDENTITY
-    end,
-
-    __name = __CLASS_IDENTITY,
-}
+--============================================================
+-- Assistance
 
 local __get_super_base
 
@@ -186,6 +96,109 @@ local __is_instance_of = function(an_instance, a_class)
     return __is_subclass_of(cls, a_class)
 end
 
+local __instance_equal_comparator = function(l, r)
+    return l.__hashcode == r.__hashcode
+end
+
+local __instance_less_than_comparator = function(l, r)
+    return l.__hashcode < r.__hashcode
+end
+
+local __instance_less_equal_comparator = function(l, r)
+    return l.__hashcode <= r.__hashcode
+end
+
+local __create_instance = function(cls, ...)
+    return cls:create(...)
+end
+
+--============================================================
+-- Allocator && Deallocator
+
+local __default_alloc = function(a_class)
+    local instance = {
+        __hashcode = __hash_code_generator(),
+        __class    = a_class,
+    }
+    setmetatable(instance, a_class)
+
+    return instance
+end
+
+local __default_dealloc = function(an_instance)
+    -- nothing to do
+end
+
+local __depth_first_initialize, __bread_first_finalize
+
+__depth_first_initialize = function(a_class, an_instance, ...)
+    if a_class.__super then
+        __depth_first_initialize(a_class.__super, an_instance, ...)
+    end
+    local initializer = rawget(a_class, "initialize")
+    if initializer then
+        initializer(an_instance, ...)
+    end
+end
+
+__bread_first_finalize = function(a_class, an_instance)
+    local finalizer = rawget(a_class, "finalize")
+    if finalizer then
+        finalizer(an_instance)
+    end
+    if a_class.__super then
+        __bread_first_finalize(a_class.__super, an_instance)
+    end
+end
+
+--============================================================
+-- Classbase
+
+classbase.create = function(a_class, ...)
+    assert(type(a_class) == "table", "You must use Class:create() instead of Class.create()")
+
+    local instance = a_class:allocate()
+    __depth_first_initialize(a_class, instance, ...)
+    return instance
+end
+
+classbase.destroy = function(an_instance)
+    assert(type(an_instance) == "table", "You must use Class:destroy() instead of Class.destroy()")
+
+    __bread_first_finalize(an_instance.__class, an_instance)
+    an_instance:deallocate()
+end
+
+classbase.allocate = function(a_class, ...)
+    if a_class.__alloc then
+        return a_class:__alloc()
+    end
+    return __default_alloc(a_class)
+end
+
+classbase.deallocate = function(an_instance, ...)
+    if an_instance.__dealloc then
+        return an_instance:__dealloc()
+    end
+    __default_dealloc(an_instance)
+end
+
+classbase.default_alloc   = __default_alloc
+classbase.default_dealloc = __default_dealloc
+
+classbase.super = function() end
+
+classbase.classname = function()
+    return classbase.__name
+end
+
+classbase.__index = classbase
+classbase.__name  = __CLASS_IDENTITY__
+classbase.__call  = __create_instance
+
+--============================================================
+-- Implemetation ability
+
 local __setfenv = function(chunk, env)
     return load(dump(chunk), nil, "bt", env)
 end
@@ -225,6 +238,9 @@ local __implements = function(a_class, filename, loader)
     return a_class
 end
 
+--============================================================
+-- Class ability
+
 local __create_class = function(name, super)
     assert(type(name) == "string", "__create_class() - string expected, got: ".. type(name))
 
@@ -235,7 +251,7 @@ local __create_class = function(name, super)
     a_class.__super = super
     a_class.__index = a_class
 
-    a_class.__tostring = __instance_stringify
+    a_class.__call = __create_instance
     a_class.__eq = __instance_equal_comparator
     a_class.__lt = __instance_less_than_comparator
     a_class.__le = __instance_less_equal_comparator
@@ -245,18 +261,13 @@ local __create_class = function(name, super)
 
     a_class.implements = __implements
 
-    a_class.initialize  = function() end
-    a_class.finalize    = function() end
-    a_class.super       = function() return super end
-    a_class.classname   = function() return name  end
+    a_class.initialize = function() end
+    a_class.finalize   = function() end
+    a_class.super      = function() return a_class.__super end
+    a_class.classname  = function() return a_class.__name  end
+    a_class.hashcode   = function(o) return  o.__hashcode end
 
-    local meta = {
-        __index = super,
-        __metatable = super,
-        __call = function(_, ...) return a_class:create(...) end,
-        __tostring = function() return name end,
-    }
-    setmetatable(a_class, meta)
+    setmetatable(a_class, super)
 
     return a_class
 end
